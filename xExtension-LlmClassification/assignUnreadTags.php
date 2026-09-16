@@ -21,7 +21,12 @@ function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension
 
         try {
                 $entryDAO = FreshRSS_Factory::createEntryDao();
-                $entries = $entryDAO->listWhere('a', 0, FreshRSS_Entry::STATE_NOT_READ);
+                $entries = $entryDAO->listWhere(
+                        'a',
+                        0,
+                        FreshRSS_Entry::STATE_NOT_READ,
+                        limit: -1,
+                );
                 $unreadCount = 0;
                 $skippedCount = 0;
                 $processedCount = 0;
@@ -43,14 +48,17 @@ function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension
                                 continue;
                         }
                         try {
-                                Minz_Log::notice('LlmClassification: Classifying unread entry ' . $entry->id());
+                                $title = trim(preg_replace('/\s+/', ' ', strip_tags($entry->title())) ?? '');
+                                $title = mb_strlen($title) > 120 ? mb_substr($title, 0, 117) . '...' : $title;
+                                $entryLabel = 'entry ' . $entry->id() . ($title !== '' ? ' "' . $title . '"' : '');
+                                Minz_Log::notice('LlmClassification: Classifying ' . $entryLabel);
                                 $classifiedEntry = $extension->classifyEntry($entry, backgroundTask: true);
                                 $entryDAO->updateEntry($classifiedEntry->toArray());
                                 $processedCount++;
-                                Minz_Log::notice('LlmClassification: Classified unread entry ' . $entry->id());
+                                Minz_Log::notice('LlmClassification: Classified ' . $entryLabel);
                         } catch (Throwable $e) {
                                 $failedCount++;
-                                Minz_Log::warning('LlmClassification: Failed to classify entry ' . $entry->id() . ': ' . $e->getMessage());
+                                Minz_Log::warning('LlmClassification: Failed to classify ' . ($entryLabel ?? ('entry ' . $entry->id())) . ': ' . $e->getMessage());
                         }
                 }
                 Minz_Log::notice('LlmClassification: Unread-entry background task finished; unread=' . $unreadCount . ', processed=' . $processedCount . ', skipped=' . $skippedCount . ', failed=' . $failedCount);
