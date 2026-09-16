@@ -3,6 +3,26 @@
 declare(strict_types=1);
 
 /**
+ * Persist a classified entry, retrying transient SQLite writer contention.
+ */
+function llmClassificationUpdateEntryWithRetry(FreshRSS_EntryDAO $entryDAO, FreshRSS_Entry $entry): void {
+	$maxAttempts = 5;
+	for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+		try {
+			$entryDAO->updateEntry($entry->toArray());
+			return;
+		} catch (Throwable $e) {
+			$isDatabaseLocked = $e->getCode() === 5
+				|| str_contains(strtolower($e->getMessage()), "database is locked");
+			if (!$isDatabaseLocked || $attempt === $maxAttempts) {
+				throw $e;
+			}
+			usleep($attempt * 250000);
+		}
+	}
+}
+
+/**
  * Classify unread entries that do not already have a tag with the configured prefix.
  * This task is independent of the insertion-time enable_tags setting.
  */
@@ -31,6 +51,7 @@ function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension
                 $skippedCount = 0;
                 $processedCount = 0;
                 $failedCount = 0;
+                unset($entryDAO);
                 foreach ($entries as $entry) {
                         $unreadCount++;
                         $hasPrefixTag = false;
@@ -53,7 +74,8 @@ function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension
                                 $entryLabel = 'entry ' . $entry->id() . ($title !== '' ? ' "' . $title . '"' : '');
                                 Minz_Log::notice('LlmClassification: Classifying ' . $entryLabel);
                                 $classifiedEntry = $extension->classifyEntry($entry, backgroundTask: true);
-                                $entryDAO->updateEntry($classifiedEntry->toArray());
+                                $writeEntryDAO = FreshRSS_Factory::createEntryDao();
+                                llmClassificationUpdateEntryWithRetry($writeEntryDAO, $classifiedEntry);
                                 $processedCount++;
                                 Minz_Log::notice('LlmClassification: Classified ' . $entryLabel);
                         } catch (Throwable $e) {

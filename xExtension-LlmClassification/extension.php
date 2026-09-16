@@ -475,19 +475,6 @@ final class LlmClassificationExtension extends Minz_Extension {
 	}
         public function handleUserMaintenance(): void {
                 require_once __DIR__ . '/assignUnreadTags.php';
-
-                if ($this->getUserConfigurationBool('background_task') && function_exists('pcntl_fork')) {
-                        $pid = pcntl_fork();
-                        if ($pid === 0) {
-                                llmClassificationAssignUnreadTags($this);
-                                exit(0);
-                        }
-                        if ($pid > 0) {
-                                return;
-                        }
-                        Minz_Log::warning('LlmClassification: Failed to start background task; running synchronously');
-                }
-
                 llmClassificationAssignUnreadTags($this);
         }
 }
