@@ -18,7 +18,7 @@ return array(
 			'allow_thinking' => 'Allow thinking mode<br />(if available)',
 			'allow_thinking_help' => 'Allow thinking mode (<i>reasoning</i>) for models that support it. Uncheck to disable, e.g. to make output length shorter.',
                         'background_task' => 'Run unread-article tagging in the background',
-                        'background_task_help' => 'Run the unread-article tagging task asynchronously during FreshRSS maintenance. Overlapping runs are skipped.',
+                        'background_task_help' => 'During FreshRSS maintenance (cron), process unread articles asynchronously. This runs independently of Enable tag classification and skips only articles that already have a tag starting with the configured prefix. Overlapping runs are skipped.',
 		),
 		'prompts' => array(
 			'title' => 'Prompts',
@@ -31,8 +31,9 @@ return array(
 		'tags' => array(
 			'title' => 'Tag Classification',
 			'enable' => 'Enable tag classification',
+                        'enable_help' => 'Controls tagging when new articles are fetched. It does not disable the unread-article background task.',
 			'prefix' => 'Tag prefix',
-			'prefix_help' => 'Prefix prepended to each tag from the LLM (e.g. "llm/")',
+			'prefix_help' => 'Prefix prepended to each tag from the LLM (e.g. "llm/"). During background processing, an unread article is skipped only if it already has a tag starting with this prefix; other tags do not prevent tagging.',
 			'allowed' => 'Allowed tags (one per line)',
 			'allowed_help' => 'If set, only these tags will be accepted from the LLM response. Empty = all tags allowed.',
 		),

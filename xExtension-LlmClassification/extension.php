@@ -420,10 +420,10 @@ final class LlmClassificationExtension extends Minz_Extension {
 	 * @throws Minz_BadRequestException
 	 * @throws Minz_PermissionDeniedException
 	 */
-	public function classifyEntry(FreshRSS_Entry $entry): FreshRSS_Entry {
+	public function classifyEntry(FreshRSS_Entry $entry, bool $backgroundTask = false): FreshRSS_Entry {
 		$enableTags = $this->getUserConfigurationBool('enable_tags') ?? false;
 		$apiUrl = $this->getUserConfigurationString('api_url') ?? '';
-		if (!$enableTags || $apiUrl === '' || !$this->hasFile(self::PROMPT_FILENAME)) {
+		if ((!$enableTags && !$backgroundTask) || $apiUrl === '' || !$this->hasFile(self::PROMPT_FILENAME)) {
 			return $entry;
 		}
 

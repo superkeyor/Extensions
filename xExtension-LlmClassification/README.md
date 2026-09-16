@@ -56,9 +56,14 @@ The **user prompt** is an editable template. The following placeholders are repl
 
 | Setting                   | Default   | Description                                                                                                                 |
 | :------------------------ | :-------- | :-------------------------------------------------------------------------------------------------------------------------- |
-| Enable tag classification | Off       | Master toggle for the extension                                                                                             |
-| Tag prefix                | *(empty)* | Prefix prepended to each LLM-generated tag (e.g. `llm/`)                                                                    |
+| Enable tag classification | Off       | Controls tagging when new articles are fetched; it does not disable the unread-article background task                                                                                             |
+| Tag prefix                | *(empty)* | Prefix prepended to each LLM-generated tag (e.g. `llm/`). During background processing, only an existing tag starting with this prefix prevents reprocessing; other tags do not.
 | Allowed tags              | *(empty)* | Whitelist of accepted tags (one per line). If set, only these tags are kept from the LLM response. Empty = all tags allowed |
+| Run unread-article tagging in the background | Off | During FreshRSS maintenance (cron), process unread articles asynchronously. Independent of Enable tag classification; overlapping runs are skipped |
+
+### Background tagging
+
+When **Run unread-article tagging in the background** is enabled, FreshRSS maintenance processes unread articles even if **Enable tag classification** is disabled. Articles are skipped only when they already contain a tag beginning with the configured prefix. Existing tags without that prefix do not prevent tagging.
 
 ### Conditions for tagging
 
