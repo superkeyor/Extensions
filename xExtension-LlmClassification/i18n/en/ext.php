@@ -17,6 +17,8 @@ return array(
 			'max_retries_help' => 'Number of retry attempts on transient errors (timeouts, invalid response, 500). 0 = no retry.',
 			'allow_thinking' => 'Allow thinking mode<br />(if available)',
 			'allow_thinking_help' => 'Allow thinking mode (<i>reasoning</i>) for models that support it. Uncheck to disable, e.g. to make output length shorter.',
+                        'background_task' => 'Run unread-article tagging in the background',
+                        'background_task_help' => 'Run the unread-article tagging task asynchronously during FreshRSS maintenance. Overlapping runs are skipped.',
 		),
 		'prompts' => array(
 			'title' => 'Prompts',

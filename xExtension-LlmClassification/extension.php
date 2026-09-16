@@ -24,6 +24,7 @@ final class LlmClassificationExtension extends Minz_Extension {
 		}
 		$this->registerTranslates();
 		$this->registerHook(Minz_HookType::EntryBeforeInsert, [$this, 'classifyEntry']);
+                $this->registerHook('freshrss_user_maintenance', [$this, 'handleUserMaintenance']);
 
 		if ($this->getUserConfigurationString('api_url') === null) {
 			$this->setUserConfigurationValue('api_url', '');
@@ -60,7 +61,10 @@ final class LlmClassificationExtension extends Minz_Extension {
 		}
 		if ($this->getUserConfigurationBool('allow_thinking') === null) {
 			$this->setUserConfigurationValue('allow_thinking', true);
-		}
+                }
+                if ($this->getUserConfigurationBool('background_task') === null) {
+                        $this->setUserConfigurationValue('background_task', false);
+                }
 	}
 
 	#[\Override]
@@ -85,6 +89,7 @@ final class LlmClassificationExtension extends Minz_Extension {
 			$this->setUserConfigurationValue('allowed_tags', trim(Minz_Request::paramString('allowed_tags', plaintext: true)));
 			$this->setUserConfigurationValue('search_filter', trim(Minz_Request::paramString('search_filter', plaintext: true)));
 			$this->setUserConfigurationValue('allow_thinking', Minz_Request::paramBoolean('allow_thinking'));
+                        $this->setUserConfigurationValue('background_task', Minz_Request::paramBoolean('background_task'));
 		}
 
 		$this->user_prompt = '';
@@ -468,4 +473,21 @@ final class LlmClassificationExtension extends Minz_Extension {
 
 		return $this->applyClassification($entry, $classification, removeOldTags: true);
 	}
+        public function handleUserMaintenance(): void {
+                require_once __DIR__ . '/assignUnreadTags.php';
+
+                if ($this->getUserConfigurationBool('background_task') && function_exists('pcntl_fork')) {
+                        $pid = pcntl_fork();
+                        if ($pid === 0) {
+                                llmClassificationAssignUnreadTags($this);
+                                exit(0);
+                        }
+                        if ($pid > 0) {
+                                return;
+                        }
+                        Minz_Log::warning('LlmClassification: Failed to start background task; running synchronously');
+                }
+
+                llmClassificationAssignUnreadTags($this);
+        }
 }

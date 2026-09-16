@@ -141,6 +141,15 @@
 		</div>
 	</div>
 
+        <div class="form-group">
+                <label class="group-name" for="background_task"><?= _t('ext.llm_classification.api.background_task') ?></label>
+                <div class="group-controls">
+                        <input type="checkbox" name="background_task" id="background_task" value="1" <?=
+                                $this->getUserConfigurationBool('background_task') ? 'checked' : '' ?> />
+                        <p class="help"><?= _t('ext.llm_classification.api.background_task_help') ?></p>
+                </div>
+        </div>
+
 	<div class="form-group form-actions">
 		<div class="group-controls">
 			<button type="submit" class="btn btn-important"><?= _t('gen.action.submit') ?></button>
