@@ -24,7 +24,7 @@ final class LlmClassificationExtension extends Minz_Extension {
 		}
 		$this->registerTranslates();
 		$this->registerHook(Minz_HookType::EntryBeforeInsert, [$this, 'classifyEntry']);
-                $this->registerHook('freshrss_user_maintenance', [$this, 'handleUserMaintenance']);
+		$this->registerHook('freshrss_user_maintenance', [$this, 'handleUserMaintenance']);
 
 		if ($this->getUserConfigurationString('api_url') === null) {
 			$this->setUserConfigurationValue('api_url', '');
@@ -475,6 +475,9 @@ final class LlmClassificationExtension extends Minz_Extension {
 	}
         public function handleUserMaintenance(): void {
                 require_once __DIR__ . '/assignUnreadTags.php';
-                llmClassificationAssignUnreadTags($this);
+
+                if ($this->getUserConfigurationBool('background_task')) {
+                        llmClassificationAssignUnreadTags($this);
+                }
         }
 }

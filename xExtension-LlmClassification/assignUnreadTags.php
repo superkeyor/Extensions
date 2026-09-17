@@ -3,26 +3,6 @@
 declare(strict_types=1);
 
 /**
- * Persist a classified entry, retrying transient SQLite writer contention.
- */
-function llmClassificationUpdateEntryWithRetry(FreshRSS_EntryDAO $entryDAO, FreshRSS_Entry $entry): void {
-	$maxAttempts = 5;
-	for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-		try {
-			$entryDAO->updateEntry($entry->toArray());
-			return;
-		} catch (Throwable $e) {
-			$isDatabaseLocked = $e->getCode() === 5
-				|| str_contains(strtolower($e->getMessage()), "database is locked");
-			if (!$isDatabaseLocked || $attempt === $maxAttempts) {
-				throw $e;
-			}
-			usleep($attempt * 250000);
-		}
-	}
-}
-
-/**
  * Classify unread entries that do not already have a tag with the configured prefix.
  * This task is independent of the insertion-time enable_tags setting.
  */
@@ -41,19 +21,23 @@ function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension
 
         try {
                 $entryDAO = FreshRSS_Factory::createEntryDao();
-                $entries = $entryDAO->listWhere(
+                $entries = iterator_to_array($entryDAO->listWhere(
                         'a',
                         0,
                         FreshRSS_Entry::STATE_NOT_READ,
-                        limit: -1,
-                );
+                        limit: -1, // Inspect all unread entries; the loop processes only 10 eligible entries.
+                ), false);
                 $unreadCount = 0;
                 $skippedCount = 0;
                 $processedCount = 0;
                 $failedCount = 0;
+                $eligibleCount = 0;
                 unset($entryDAO);
                 foreach ($entries as $entry) {
                         $unreadCount++;
+                        if ($eligibleCount >= 10) {
+                                break;
+                        }
                         $hasPrefixTag = false;
                         if ($prefix !== '') {
                                 foreach ($entry->tags() as $tag) {
@@ -73,9 +57,14 @@ function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension
                                 $title = mb_strlen($title) > 120 ? mb_substr($title, 0, 117) . '...' : $title;
                                 $entryLabel = 'entry ' . $entry->id() . ($title !== '' ? ' "' . $title . '"' : '');
                                 Minz_Log::notice('LlmClassification: Classifying ' . $entryLabel);
+                                $eligibleCount++;
                                 $classifiedEntry = $extension->classifyEntry($entry, backgroundTask: true);
-                                $writeEntryDAO = FreshRSS_Factory::createEntryDao();
-                                llmClassificationUpdateEntryWithRetry($writeEntryDAO, $classifiedEntry);
+                                try {
+                                        $entryDAO = FreshRSS_Factory::createEntryDao();
+                                        $entryDAO->updateEntry($classifiedEntry->toArray());
+                                } finally {
+                                        unset($entryDAO);
+                                }
                                 $processedCount++;
                                 Minz_Log::notice('LlmClassification: Classified ' . $entryLabel);
                         } catch (Throwable $e) {
