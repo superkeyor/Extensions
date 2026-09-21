@@ -8,6 +8,7 @@ declare(strict_types=1);
  */
 function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension): void {
         $prefix = $extension->getUserConfigurationString('tag_prefix') ?? '';
+        $batchSize = max(1, $extension->getUserConfigurationInt('background_task_batch_size') ?? 20);
         Minz_Log::notice('LlmClassification: Starting unread-entry background task (prefix: ' . ($prefix !== '' ? $prefix : '<empty>') . ')');
         $lockPath = DATA_PATH . '/llm_classification_unread.lock';
         $lockHandle = @fopen($lockPath, 'c');
@@ -25,7 +26,7 @@ function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension
                         'a',
                         0,
                         FreshRSS_Entry::STATE_NOT_READ,
-                        limit: -1, // Inspect all unread entries; the loop processes only 10 eligible entries.
+                        limit: -1, // Inspect all unread entries; the loop processes only the configured number of eligible entries.
                 ), false);
                 $unreadCount = 0;
                 $skippedCount = 0;
@@ -35,7 +36,7 @@ function llmClassificationAssignUnreadTags(LlmClassificationExtension $extension
                 unset($entryDAO);
                 foreach ($entries as $entry) {
                         $unreadCount++;
-                        if ($eligibleCount >= 10) {
+                        if ($eligibleCount >= $batchSize) {
                                 break;
                         }
                         $hasPrefixTag = false;

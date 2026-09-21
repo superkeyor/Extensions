@@ -151,6 +151,16 @@
                 </div>
         </div>
 
+        <div class="form-group">
+                <label class="group-name" for="background_task_batch_size"><?= _t('ext.llm_classification.api.background_task_batch_size') ?></label>
+                <div class="group-controls">
+                        <input type="number" name="background_task_batch_size" id="background_task_batch_size" min="1" value="<?=
+                                $this->getUserConfigurationInt('background_task_batch_size') ?? 20
+                        ?>" />
+                        <p class="help"><?= _t('ext.llm_classification.api.background_task_batch_size_help') ?></p>
+                </div>
+        </div>
+
 	<div class="form-group form-actions">
 		<div class="group-controls">
 			<button type="submit" class="btn btn-important"><?= _t('gen.action.submit') ?></button>

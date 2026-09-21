@@ -6,6 +6,7 @@ final class LlmClassificationExtension extends Minz_Extension {
 	private const DEFAULT_MODEL = 'gpt-4o-mini';
 	private const DEFAULT_TIMEOUT = 30;
 	private const DEFAULT_MAX_CONTENT_LENGTH = 4000;
+	private const DEFAULT_BACKGROUND_TASK_BATCH_SIZE = 20;
 	private const DEFAULT_MAX_TOKENS = 512;
 	private const DEFAULT_MAX_RETRIES = 2;
 	private const RETRYABLE_HTTP_STATUSES = [429, 500, 502, 503, 504];
@@ -65,6 +66,9 @@ final class LlmClassificationExtension extends Minz_Extension {
                 if ($this->getUserConfigurationBool('background_task') === null) {
                         $this->setUserConfigurationValue('background_task', false);
                 }
+                if ($this->getUserConfigurationInt('background_task_batch_size') === null) {
+                        $this->setUserConfigurationValue('background_task_batch_size', self::DEFAULT_BACKGROUND_TASK_BATCH_SIZE);
+                }
 	}
 
 	#[\Override]
@@ -90,6 +94,7 @@ final class LlmClassificationExtension extends Minz_Extension {
 			$this->setUserConfigurationValue('search_filter', trim(Minz_Request::paramString('search_filter', plaintext: true)));
 			$this->setUserConfigurationValue('allow_thinking', Minz_Request::paramBoolean('allow_thinking'));
                         $this->setUserConfigurationValue('background_task', Minz_Request::paramBoolean('background_task'));
+                        $this->setUserConfigurationValue('background_task_batch_size', max(1, Minz_Request::paramInt('background_task_batch_size')));
 		}
 
 		$this->user_prompt = '';

@@ -18,7 +18,9 @@ return array(
 			'allow_thinking' => 'Allow thinking mode<br />(if available)',
 			'allow_thinking_help' => 'Allow thinking mode (<i>reasoning</i>) for models that support it. Uncheck to disable, e.g. to make output length shorter.',
                         'background_task' => 'Run unread-article tagging in the background',
-                        'background_task_help' => 'During FreshRSS maintenance, process up to x (hard-coded) unread entries without the configured prefix. This is independent of feed-refresh tagging; enable either option as needed. Overlapping runs are skipped.',
+                        'background_task_help' => 'During FreshRSS maintenance, process unread entries without the configured prefix. This is independent of feed-refresh tagging; enable either option as needed. Overlapping runs are skipped.',
+                        'background_task_batch_size' => 'Articles per background run',
+                        'background_task_batch_size_help' => 'Maximum number of eligible unread articles to process each time the background task runs (default: 20).',
 		),
 		'prompts' => array(
 			'title' => 'Prompts',
