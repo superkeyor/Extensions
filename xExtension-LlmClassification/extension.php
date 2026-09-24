@@ -24,6 +24,8 @@ final class LlmClassificationExtension extends Minz_Extension {
 			throw new FreshRSS_Context_Exception('System configuration not initialised!');
 		}
 		$this->registerTranslates();
+		$this->registerController('llmClassification');
+		$this->registerViews();
 		$this->registerHook(Minz_HookType::EntryBeforeInsert, [$this, 'classifyEntry']);
 		$this->registerHook('freshrss_user_maintenance', [$this, 'handleUserMaintenance']);
 
