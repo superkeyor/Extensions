@@ -20,7 +20,7 @@ return array(
                         'background_task' => 'Run unread-article tagging in the background',
                         'background_task_help' => 'During FreshRSS maintenance, process unread entries without the configured prefix. This is independent of feed-refresh tagging; enable either option as needed. Overlapping runs are skipped.',
                         'background_task_batch_size' => 'Articles per background run',
-                        'background_task_batch_size_help' => 'Maximum number of eligible unread articles to process each time the background task runs (default: 20).',
+			            'background_task_batch_size_help' => 'Maximum number of unread articles to classify successfully per run (failed attempts do not count). Newest articles are processed first. A run also stops after 28 minutes or 10 consecutive failures, so set this high if you want the time budget to end each run (default: 20).',
 		),
 		'prompts' => array(
 			'title' => 'Prompts',
