@@ -12,6 +12,7 @@ It classifies articles on insertion using a customizable prompt, and applies tag
 - Response caching to avoid redundant API calls
 - Content truncation to control token usage
 - Skips re-classifying updated articles without any prompt-relevant change, avoiding redundant LLM API calls
+- Optional background tagging of unread articles, newest first, with a per-run time budget and overlap protection
 
 ## Requirements
 
@@ -59,12 +60,23 @@ The **user prompt** is an editable template. The following placeholders are repl
 | Enable tag classification | Off       | Controls tagging when new articles are fetched; it does not disable the unread-article background task                                                                                             |
 | Tag prefix                | *(empty)* | Prefix prepended to each LLM-generated tag (e.g. `llm/`). During background processing, only an existing tag starting with this prefix prevents reprocessing; other tags do not.
 | Allowed tags              | *(empty)* | Whitelist of accepted tags (one per line). If set, only these tags are kept from the LLM response. Empty = all tags allowed |
-| Run unread-article tagging in the background | Off | During FreshRSS maintenance, process eligible unread entries per run. Independent of feed-refresh tagging; overlapping runs are skipped |
-| Articles per background run | `20` | Maximum number of eligible unread articles to process each time the background task runs |
+| Run unread-article tagging in the background | Off | During FreshRSS maintenance, process eligible unread entries per run, newest first. Independent of feed-refresh tagging; overlapping runs are skipped |
+| Articles per background run | `20` | Maximum number of unread articles to classify successfully in each run. Failed attempts do not count toward this limit. A run can also end earlier (see [Background tagging](#background-tagging)) |
 
 ### Background tagging
 
 When **Run unread-article tagging in the background** is enabled, FreshRSS maintenance processes unread articles even if **Enable tag classification** is disabled. Articles are skipped only when they already contain a tag beginning with the configured prefix. Existing tags without that prefix do not prevent tagging.
+
+Each run works as follows:
+
+- **Newest first:** unread articles are processed in descending entry id order, which is the order FreshRSS added them. The newest articles are therefore tagged first on every run.
+- **Batch size:** a run stops once **Articles per background run** articles have been classified and saved successfully. Failed attempts do not use up the batch.
+- **Time budget:** a run stops starting new classifications after 28 minutes, so that it finishes before the next run when maintenance runs about every 30 minutes. A classification already in progress is allowed to finish. The budget is fixed in the code and is not a setting.
+- **Failure cutoff:** a run aborts after 10 consecutive failed classifications (for example when the LLM API is down). Any success resets the count. The limit is fixed in the code and is not a setting.
+- **Retries:** an article that fails is not tagged, so it is attempted again on the next run.
+- **No overlap:** a lock file ensures that only one run is active at a time. If a run is still active when the next one starts, the new run is skipped.
+
+To keep a machine busy for the whole budget, set **Articles per background run** high enough that the time budget, rather than the batch size, ends each run. A run also ends early when no eligible unread articles remain.
 
 ### Conditions for tagging
 
